@@ -44,6 +44,11 @@ export default function Dashboard() {
   });
   const [editingId, setEditingId] = useState(null);
 
+  // Filtros
+  const [filterBy, setFilterBy] = useState('date');
+  const [filterStart, setFilterStart] = useState('');
+  const [filterEnd, setFilterEnd] = useState('');
+
   useEffect(() => {
     const q = query(collection(db, 'transactions'), where('uid', '==', user.uid));
     const unsubscribe = onSnapshot(q, snapshot => {
@@ -108,6 +113,39 @@ export default function Dashboard() {
     setEditingId(tx.id);
   };
 
+  // Filtro
+  const filteredTransactions = transactions.filter(tx => {
+    if (!filterStart || !filterEnd) return true;
+    const value = tx[filterBy];
+
+    let dateToCompare;
+    if (value?.seconds) {
+      dateToCompare = new Date(value.seconds * 1000);
+    } else if (typeof value === 'string') {
+      dateToCompare = new Date(value);
+    } else {
+      return false;
+    }
+
+    const start = new Date(filterStart);
+    const end = new Date(filterEnd);
+    return dateToCompare >= start && dateToCompare <= end;
+  });
+
+  // Total
+  const total = filteredTransactions.reduce((acc, tx) => {
+    const amount = parseFloat(tx.amount);
+    return tx.type === 'Receita' ? acc + amount : acc - amount;
+  }, 0);
+  
+
+  const handleClearFilters = () => {
+    setFilterBy('date');
+    setFilterStart('');
+    setFilterEnd('');
+  };
+  
+
   return (
     <Box sx={{
       minHeight: '100vh',
@@ -116,7 +154,7 @@ export default function Dashboard() {
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: '#1e1e1e',
-    }}> 
+    }}>
       <Container maxWidth="lg">
         <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
           <Typography variant="h4" gutterBottom>Dashboard Financeiro</Typography>
@@ -124,9 +162,7 @@ export default function Dashboard() {
           {/* Formulário */}
           <Box display="flex" flexWrap="wrap" gap={2} mb={3}>
             <TextField name="amount" label="Valor" value={form.amount} onChange={handleChange} />
-            <TextField
-              select name="type" label="Tipo" value={form.type} onChange={handleChange}
-            >
+            <TextField select name="type" label="Tipo" value={form.type} onChange={handleChange}>
               <MenuItem value="Receita">Receita</MenuItem>
               <MenuItem value="Despesa">Despesa</MenuItem>
             </TextField>
@@ -147,14 +183,44 @@ export default function Dashboard() {
               InputLabelProps={{ shrink: true }}
             />
             <TextField name="detail" label="Detalhamento" value={form.detail} onChange={handleChange} />
-            <TextField
-              select name="status" label="Status" value={form.status} onChange={handleChange}
-            >
+            <TextField select name="status" label="Status" value={form.status} onChange={handleChange}>
               <MenuItem value="Pago">Pago</MenuItem>
               <MenuItem value="Não Pago">Não Pago</MenuItem>
             </TextField>
             <Button variant="contained" onClick={handleAdd}>
               {editingId ? 'Salvar Alterações' : 'Adicionar'}
+            </Button>
+          </Box>
+
+          {/* Filtros */}
+          <Box display="flex" gap={2} mb={2} alignItems="flex-end">
+            <TextField
+              select
+              label="Filtrar por"
+              value={filterBy}
+              onChange={e => setFilterBy(e.target.value)}
+            >
+              <MenuItem value="date">Data de Inclusão</MenuItem>
+              <MenuItem value="dueDate">Data de Vencimento</MenuItem>
+              <MenuItem value="paymentDate">Data de Pagamento</MenuItem>
+            </TextField>
+            <TextField
+              label="De"
+              type="date"
+              value={filterStart}
+              onChange={e => setFilterStart(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Até"
+              type="date"
+              value={filterEnd}
+              onChange={e => setFilterEnd(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+
+            <Button variant="outlined" color="secondary" onClick={handleClearFilters}>
+              Limpar Filtros
             </Button>
           </Box>
 
@@ -174,9 +240,11 @@ export default function Dashboard() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {transactions.map(tx => (
+                {filteredTransactions.map(tx => (
                   <TableRow key={tx.id}>
-                    <TableCell align='center'>{new Date(tx.date.seconds * 1000).toLocaleDateString()}</TableCell>
+                    <TableCell align='center'>
+                      {tx.date?.seconds ? new Date(tx.date.seconds * 1000).toLocaleDateString() : '-'}
+                    </TableCell>
                     <TableCell align='center'>{tx.type}</TableCell>
                     <TableCell align='center'>{tx.dueDate || '-'}</TableCell>
                     <TableCell align='center'>{tx.paymentDate || '-'}</TableCell>
@@ -200,6 +268,15 @@ export default function Dashboard() {
                     </TableCell>
                   </TableRow>
                 ))}
+                <TableRow>
+                  <TableCell colSpan={5} align="right" style={{ fontWeight: 'bold' }}>
+                    Total:
+                  </TableCell>
+                  <TableCell align="center" style={{ fontWeight: 'bold', color: total >= 0 ? 'green' : 'red' }}>
+                    R$ {total.toFixed(2)}
+                  </TableCell>
+                  <TableCell colSpan={2} />
+                </TableRow>
               </TableBody>
             </Table>
           </TableContainer>
