@@ -7,39 +7,41 @@ import {
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Relatorios from "./pages/Relatórios";
-import Cadastros from "./pages/Cadastros/Clientes";
 import Dashboard from "./pages/Dashboard";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./routes/ProtectRoute";
 import { AuthProvider } from "./context/AuthContext";
-import Clientes from "./pages/Cadastros/Clientes";
+import DespesasFixas from "./pages/Cadastros/DespesasFixas";
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          {/* Rotas públicas */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+      <Router basename="/iPay">
+        <AuthProvider>
+          <Routes>
+            {/* Rotas públicas */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-          {/* Rotas protegidas com layout */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="relatorios" element={<Relatorios />} />
-            <Route path="cadastros/clientes" element={<Clientes />} />
-          </Route>
-        </Routes>
+            {/* Rotas protegidas com layout */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="relatorios" element={<Relatorios />} />
+              <Route path="cadastros/despesasfixas" element={<DespesasFixas />} />
+            </Route>
+
+            {/* Redirecionamento padrão */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
       </AuthProvider>
     </Router>
+
   );
 }
 

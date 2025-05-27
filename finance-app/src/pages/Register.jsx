@@ -1,6 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { useNavigate } from 'react-router-dom';
 import * as yup from 'yup';
@@ -33,7 +33,7 @@ export default function Register() {
 
   const onSubmit = async ({ email, password }) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, email, password);
       navigate('/dashboard');
     } catch (error) {
       alert('Erro ao registrar: ' + error.message);
@@ -41,19 +41,10 @@ export default function Register() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#1e1e1e',
-      }}
-    >
-      <Paper elevation={3} sx={{ padding: 4 }}>
+    <Container maxWidth="sm">
+      <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
         <Typography variant="h5" align="center" gutterBottom>
-          Login
+          Criar Conta
         </Typography>
         <form onSubmit={handleSubmit(onSubmit)}>
           <TextField
@@ -64,7 +55,7 @@ export default function Register() {
             error={!!errors.email}
             helperText={errors.email?.message}
           />
-  
+
           <TextField
             fullWidth
             type="password"
@@ -74,23 +65,12 @@ export default function Register() {
             error={!!errors.password}
             helperText={errors.password?.message}
           />
-  
-          <Button
-            fullWidth
-            variant="contained"
-            color="primary"
-            type="submit"
-            sx={{ mt: 2 }}
-          >
-            Entrar
+
+          <Button fullWidth variant="contained" color="primary" type="submit" sx={{ mt: 2 }}>
+            Registrar
           </Button>
-          <Box sx={{display: 'flex', justifyContent: 'center'}}>
-            <p>Não tem conta? <a href='Register'>Registre-se</a> </p>
-          </Box>
         </form>
       </Paper>
-    </Box>
+    </Container>
   );
-  
-  
 }

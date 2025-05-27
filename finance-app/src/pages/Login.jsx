@@ -84,9 +84,6 @@ export default function Register() {
           >
             Entrar
           </Button>
-          <Box sx={{display: 'flex', justifyContent: 'center'}}>
-            <p>Não tem conta? <a href='Register'>Registre-se</a> </p>
-          </Box>
         </form>
       </Paper>
     </Box>

@@ -3,7 +3,6 @@ import { db } from '../firebase/config';
 import {
   collection,
   addDoc,
-  getDocs,
   deleteDoc,
   doc,
   onSnapshot,
@@ -84,15 +83,13 @@ export default function Dashboard() {
         dueDate: form.dueDate,
         detail: form.detail,
         status: form.status,
-        competenciaMes: form.competenciaMes,
-        competenciaAno: form.competenciaAno,
         date: new Date()
       });
     }
 
     setForm({
       amount: '',
-      type: 'Despesa',
+      type: 'Receita',
       paymentDate: '',
       dueDate: '',
       detail: '',
@@ -104,20 +101,17 @@ export default function Dashboard() {
     await deleteDoc(doc(db, 'transactions', id));
   };
 
-  const handleEdit = (item) => {
-    setEditingId(item.id);
+  const handleEdit = (tx) => {
     setForm({
-      amount: String(item.amount ?? ''),
-      paymentDate: item.paymentDate ?? '',
-      dueDate: item.dueDate ?? '',
-      detail: item.detail ?? '',
-      status: item.status ?? 'Não Pago',
-      type: item.type ?? 'Despesa',
-      competenciaMes: item.competenciaMes ?? '',
-      competenciaAno: item.competenciaAno ?? ''
+      amount: tx.amount,
+      type: tx.type,
+      paymentDate: tx.paymentDate || '',
+      dueDate: tx.dueDate || '',
+      detail: tx.detail || '',
+      status: tx.status || 'Pago'
     });
+    setEditingId(tx.id);
   };
-  
 
   // Filtro
   const filteredTransactions = transactions.filter(tx => {
@@ -151,87 +145,26 @@ export default function Dashboard() {
     setFilterEnd('');
   };
   
-  const handleLoadFixedExpenses = async () => {
-    if (!form.competenciaMes || !form.competenciaAno) {
-      alert('Informe mês e ano de competência antes de carregar despesas fixas.');
-      return;
-    }
-  
-    const despesasFixasSnapshot = await getDocs(collection(db, 'despesasFixas'));
-    const despesasFixas = [];
-  
-    despesasFixasSnapshot.forEach((doc) => {
-      const data = doc.data();
-      const competenciaMes = parseInt(form.competenciaMes);
-      const competenciaAno = parseInt(form.competenciaAno);
-  
-      if (
-        data.tipo === 'mensal' ||
-        (data.tipo === 'anual' && parseInt(data.mes) === competenciaMes)
-      ) {
-        despesasFixas.push({
-          uid: user.uid,
-          amount: 0, // valor poderá ser editado depois
-          type: 'Despesa',
-          paymentDate: '', // opcionalmente calculável com data
-          dueDate: new Date(competenciaAno, competenciaMes - 1, parseInt(data.dia)).toISOString().split('T')[0],
-          detail: data.descricao,
-          status: 'Não Pago',
-          competenciaMes,
-          competenciaAno,
-          date: new Date()
-        });
-      }
-    });
-  
-    try {
-      for (const despesa of despesasFixas) {
-        await addDoc(collection(db, 'transactions'), despesa);
-      }
-      alert('Despesas fixas carregadas com sucesso!');
-    } catch (error) {
-      console.error('Erro ao carregar despesas fixas:', error);
-      alert('Erro ao carregar despesas fixas. Verifique o console.');
-    }
-  };
-  
-  
 
   return (
     <Box sx={{
       minHeight: '100vh',
-      width: '97vw',
+      width: '100vw',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: '#1e1e1e',
     }}>
-      <Container maxWidth="false" disableGutters sx={{padding: 4}} >
-        <Paper elevation={3} sx={{ padding: 2, marginTop: 0, minHeight: '90vh' }}>
+      <Container maxWidth="lg">
+        <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
           <Typography variant="h4" gutterBottom>Dashboard Financeiro</Typography>
 
           {/* Formulário */}
-          <Box display="flex" flexWrap="wrap" gap={2} mb={4}>
-          <TextField
-            name="competenciaMes"
-            label="Mês de Competência"
-            type="number"
-            inputProps={{ min: 1, max: 12 }}
-            value={form.competenciaMes}
-            onChange={handleChange}
-          />
-          <TextField
-            name="competenciaAno"
-            label="Ano de Competência"
-            type="number"
-            value={form.competenciaAno}
-            onChange={handleChange}
-          />
-
+          <Box display="flex" flexWrap="wrap" gap={2} mb={3}>
             <TextField name="amount" label="Valor" value={form.amount} onChange={handleChange} />
             <TextField select name="type" label="Tipo" value={form.type} onChange={handleChange}>
-              <MenuItem value="Despesa">Despesa</MenuItem>
               <MenuItem value="Receita">Receita</MenuItem>
+              <MenuItem value="Despesa">Despesa</MenuItem>
             </TextField>
             <TextField
               name="dueDate"
@@ -257,10 +190,6 @@ export default function Dashboard() {
             <Button variant="contained" onClick={handleAdd}>
               {editingId ? 'Salvar Alterações' : 'Adicionar'}
             </Button>
-            <Button variant="outlined" onClick={handleLoadFixedExpenses}>
-              Carregar Despesas Fixas
-            </Button>
-
           </Box>
 
           {/* Filtros */}

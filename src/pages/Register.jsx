@@ -41,36 +41,56 @@ export default function Register() {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
-        <Typography variant="h5" align="center" gutterBottom>
-          Criar Conta
-        </Typography>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <TextField
-            fullWidth
-            label="Email"
-            margin="normal"
-            {...register('email')}
-            error={!!errors.email}
-            helperText={errors.email?.message}
-          />
+    <Box
+          sx={{
+            minHeight: '100vh',
+            width: '100vw',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: '#1e1e1e',
+          }}
+        >
+        <Container maxWidth="sm">
+          <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
+            <Typography variant="h5" align="center" gutterBottom>
+              Criar Conta
+            </Typography>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <TextField
+                fullWidth
+                label="Nome"
+                margin="normal"
+                {...register('nome')}
+                error={!!errors.nome}
+                helperText={errors.nome?.message}
+              />
 
-          <TextField
-            fullWidth
-            type="password"
-            label="Senha"
-            margin="normal"
-            {...register('password')}
-            error={!!errors.password}
-            helperText={errors.password?.message}
-          />
+              <TextField
+                fullWidth
+                label="Email"
+                margin="normal"
+                {...register('email')}
+                error={!!errors.email}
+                helperText={errors.email?.message}
+              />
 
-          <Button fullWidth variant="contained" color="primary" type="submit" sx={{ mt: 2 }}>
-            Registrar
-          </Button>
-        </form>
-      </Paper>
-    </Container>
+              <TextField
+                fullWidth
+                type="password"
+                label="Senha"
+                margin="normal"
+                {...register('password')}
+                error={!!errors.password}
+                helperText={errors.password?.message}
+              />
+
+              <Button fullWidth variant="contained" color="primary" type="submit" sx={{ mt: 2 }}>
+                Registrar
+              </Button>
+            </form>
+          </Paper>
+        </Container>
+      </Box>
   );
 }

@@ -20,7 +20,7 @@ export default function Layout() {
   ];
 
   const cadastroItems = [
-    { label: 'Clientes', path: '/Cadastros/Clientes' },
+    { label: 'Despesas Fixas', path: '/Cadastros/DespesasFixas' },
     { label: 'Produtos', path: '/Cadastros/Produtos' },
     { label: 'Usuários', path: '/Cadastros/Usuarios' },
   ];
