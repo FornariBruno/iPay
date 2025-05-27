@@ -1,287 +1,184 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { db } from '../../firebase/config';
 import {
-  Card,
-  CardContent,
+  collection,
+  addDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  updateDoc,
+  query,
+  where
+} from 'firebase/firestore';
+import { useAuth } from '../../context/AuthContext';
+import {
+  Container,
   Typography,
-  Box,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
-  FormControl,
-  InputLabel,
+  Button,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Box,
   MenuItem,
   Select,
+  FormControl,
+  InputLabel
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 
-const Despesas = () => {
-  const [despesas, setDespesas] = useState([
-    { id: 1, descricao: 'Supermercado', tipo: 'Gasto', dia: 10, mes: 'Maio', valor: 200 },
-    { id: 2, descricao: 'Salário', tipo: 'Receita', dia: 5, mes: 'Maio', valor: 3000 },
-  ]);
+export default function DespesasFixas() {
+  const { user } = useAuth();
+  const [despesas, setDespesas] = useState([]);
 
-  const [descricao, setDescricao] = useState('');
-  const [valor, setValor] = useState('');
-  const [dia, setDia] = useState('');
-  const [mes, setMes] = useState('');
-  const [tipo, setTipo] = useState('');
-  const [despesaSelecionada, setDespesaSelecionada] = useState(null);
+  const [form, setForm] = useState({
+    descricao: '',
+    tipo: 'Gasto',
+    dia: '',
+    mes: '',
+    valor: ''
+  });
 
+  const [editingId, setEditingId] = useState(null);
 
+  useEffect(() => {
+    if (!user) return;
+    const despesasCollection = collection(db, 'despesasFixas');
+    const q = query(despesasCollection, where('uid', '==', user.uid));
+    const unsubscribe = onSnapshot(q, snapshot => {
+      setDespesas(snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })));
+    });
+    return unsubscribe;
+  }, [user]);
 
-  const handleEditar = (item) => {
-    setDespesaSelecionada({ ...item });
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSalvarEdicao = () => {
-    const novaLista = despesas.map((d) =>
-      d.id === despesaSelecionada.id ? despesaSelecionada : d
-    );
-    setDespesas(novaLista);
-    setDespesaSelecionada(null);
+  const handleAdd = async () => {
+    if (!form.descricao.trim() || !form.dia) return;
+
+    if (editingId) {
+      const ref = doc(db, 'despesasFixas', editingId);
+      await updateDoc(ref, {
+        ...form,
+        valor: form.valor ? parseFloat(form.valor) : 0,
+      });
+      setEditingId(null);
+    } else {
+      await addDoc(collection(db, 'despesasFixas'), {
+        ...form,
+        valor: form.valor ? parseFloat(form.valor) : 0,
+        uid: user.uid
+      });
+    }
+
+    setForm({
+      descricao: '',
+      tipo: 'Gasto',
+      dia: '',
+      mes: '',
+      valor: ''
+    });
   };
 
-  const handleExcluir = (id) => {
-    const novaLista = despesas.filter((d) => d.id !== id);
-    setDespesas(novaLista);
+  const handleDelete = async (id) => {
+    await deleteDoc(doc(db, 'despesasFixas', id));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const novaDespesa = {
-      id: Date.now(),
-      descricao,
-      valor,
-      dia,
-      mes,
-      tipo,
-    };
-    
-    setDespesas([...despesas, novaDespesa]);
-    setDescricao('');
-    setValor('');
-    setDia('');
-    setMes('');
-    setTipo('');
+  const handleEdit = (item) => {
+    setForm({
+      descricao: item.descricao || '',
+      tipo: item.tipo || 'Gasto',
+      dia: item.dia || '',
+      mes: item.mes || '',
+      valor: item.valor || ''
+    });
+    setEditingId(item.id);
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 4,
-        py: 4,
-        minHeight: '100vh',
-        backgroundColor: '#1e1e1e',
-        color: '#fff',
-      }}
-    >
-      {/* Formulário de Cadastro */}
-      <Box
-        component="form"
-        onSubmit={handleSubmit}
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          width: '90%',
-          maxWidth: 500,
-          backgroundColor: '#2c2c2c',
-          padding: 3,
-          borderRadius: 2,
-          boxShadow: 4,
-        }}
-      >
-        <Typography variant="h6" align="center">
-          Cadastro de Despesas
-        </Typography>
+    <Box sx={{
+      minHeight: '100vh',
+      width: '100vw',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#1e1e1e',
+    }}>
+      <Container maxWidth="lg">
+        <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
+          <Typography variant="h4" gutterBottom>Despesas Fixas</Typography>
 
-        <TextField
-          label="Descrição"
-          variant="outlined"
-          fullWidth
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          required
-          InputLabelProps={{ style: { color: '#ccc' } }}
-          InputProps={{ style: { color: '#fff' } }}
-        />
-
-        <TextField
-          label="Valor"
-          type="number"
-          variant="outlined"
-          fullWidth
-          value={valor}
-          onChange={(e) => setValor(e.target.value)}
-          required
-          InputLabelProps={{ style: { color: '#ccc' } }}
-          InputProps={{ style: { color: '#fff' } }}
-        />
-
-        <TextField
-          label="Dia"
-          type="number"
-          variant="outlined"
-          fullWidth
-          value={dia}
-          onChange={(e) => setDia(e.target.value)}
-          required
-          InputLabelProps={{ style: { color: '#ccc' } }}
-          InputProps={{ style: { color: '#fff' } }}
-        />
-
-        <FormControl fullWidth>
-          <InputLabel sx={{ color: '#ccc' }}>Mês</InputLabel>
-          <Select
-            value={mes}
-            onChange={(e) => setMes(e.target.value)}
-            sx={{ color: '#fff' }}
-          >
-            {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m) => (
-              <MenuItem key={m} value={m}>{m}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <FormControl fullWidth>
-          <InputLabel sx={{ color: '#ccc' }}>Tipo</InputLabel>
-          <Select
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value)}
-            sx={{ color: '#fff' }}
-          >
-            <MenuItem value="Gasto">Gasto</MenuItem>
-            <MenuItem value="Receita">Receita</MenuItem>
-          </Select>
-        </FormControl>
-
-        <Button type="submit" variant="contained" color="primary">
-          Cadastrar
-        </Button>
-      </Box>
-
-      {/* Lista de Despesas */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'center',
-          gap: 2,
-          width: '90%',
-          maxWidth: 600,
-        }}
-      >
-        {despesas.map((despesa) => (
-          <Card key={despesa.id} sx={{ borderRadius: 2 }}>
-            <CardContent>
-              <Typography variant="h6">{despesa.descricao}</Typography>
-              <Typography variant="body2">Tipo: {despesa.tipo}</Typography>
-              <Typography variant="body2">
-                Dia: {despesa.dia} / Mês: {despesa.mes}
-              </Typography>
-              <Typography variant="body1" sx={{ mt: 1 }}>
-                Valor: R$ {parseFloat(despesa.valor).toFixed(2)}
-              </Typography>
-            </CardContent>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 1,
-                px: 2,
-                pb: 2,
-              }}
-            >
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={() => handleEditar(despesa)}
-              >
-                Editar
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={() => handleExcluir(despesa.id)}
-              >
-                Excluir
-              </Button>
-            </Box>
-          </Card>
-        ))}
-      </Box>
-
-      {/* Modal de Edição */}
-      {despesaSelecionada && (
-        <Dialog open onClose={() => setDespesaSelecionada(null)}>
-          <DialogTitle>Editar Despesa</DialogTitle>
-          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <TextField
-              label="Descrição"
-              value={despesaSelecionada.descricao}
-              onChange={(e) =>
-                setDespesaSelecionada({ ...despesaSelecionada, descricao: e.target.value })
-              }
-              fullWidth
-            />
-            <TextField
-              label="Valor"
-              type="number"
-              value={despesaSelecionada.valor}
-              onChange={(e) =>
-                setDespesaSelecionada({ ...despesaSelecionada, valor: e.target.value })
-              }
-              fullWidth
-            />
-            <TextField
-              label="Dia"
-              type="number"
-              value={despesaSelecionada.dia}
-              onChange={(e) =>
-                setDespesaSelecionada({ ...despesaSelecionada, dia: e.target.value })
-              }
-              fullWidth
-            />
-            <FormControl fullWidth>
-              <InputLabel>Mês</InputLabel>
-              <Select
-                value={despesaSelecionada.mes}
-                onChange={(e) =>
-                  setDespesaSelecionada({ ...despesaSelecionada, mes: e.target.value })
-                }
-              >
-                {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m) => (
-                  <MenuItem key={m} value={m}>{m}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth>
+          <Box display="flex" flexWrap="wrap" gap={2} mb={3}>
+            <TextField name="descricao" label="Descrição" value={form.descricao} onChange={handleChange} />
+            <FormControl sx={{ minWidth: 120 }}>
               <InputLabel>Tipo</InputLabel>
-              <Select
-                value={despesaSelecionada.tipo}
-                onChange={(e) =>
-                  setDespesaSelecionada({ ...despesaSelecionada, tipo: e.target.value })
-                }
-              >
+              <Select name="tipo" value={form.tipo} onChange={handleChange} label="Tipo">
                 <MenuItem value="Gasto">Gasto</MenuItem>
                 <MenuItem value="Receita">Receita</MenuItem>
               </Select>
             </FormControl>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDespesaSelecionada(null)}>Cancelar</Button>
-            <Button onClick={handleSalvarEdicao} variant="contained" color="primary">
-              Salvar
+            <TextField name="dia" label="Dia" type="number" value={form.dia} onChange={handleChange} />
+            <FormControl sx={{ minWidth: 120 }}>
+              <InputLabel>Mês</InputLabel>
+              <Select name="mes" value={form.mes} onChange={handleChange} label="Mês">
+                <MenuItem value="">Mensal</MenuItem>
+                {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map(m => (
+                  <MenuItem key={m} value={m}>{m}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField name="valor" label="Valor" type="number" value={form.valor} onChange={handleChange} />
+            <Button variant="contained" onClick={handleAdd}>
+              {editingId ? 'Salvar Alterações' : 'Cadastrar'}
             </Button>
-          </DialogActions>
-        </Dialog>
-      )}
+          </Box>
+
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Descrição</TableCell>
+                  <TableCell>Tipo</TableCell>
+                  <TableCell>Dia</TableCell>
+                  <TableCell>Mês</TableCell>
+                  <TableCell>Valor</TableCell>
+                  <TableCell>Ações</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {despesas.map(d => (
+                  <TableRow key={d.id}>
+                    <TableCell>{d.descricao}</TableCell>
+                    <TableCell>{d.tipo}</TableCell>
+                    <TableCell>{d.dia}</TableCell>
+                    <TableCell>{d.mes || 'Mensal'}</TableCell>
+                    <TableCell>R$ {(parseFloat(d.valor) || 0).toFixed(2)}</TableCell>
+                    <TableCell>
+                      <IconButton onClick={() => handleEdit(d)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton onClick={() => handleDelete(d.id)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      </Container>
     </Box>
   );
-};
-
-export default Despesas;
+}

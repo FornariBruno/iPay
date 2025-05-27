@@ -25,6 +25,18 @@ export default function Layout() {
     { label: 'Usuários', path: '/Cadastros/Usuarios' },
   ];
 
+  const sair = [
+     {label: 'Sair', path: '/login'},
+  ]
+
+    const teste = [
+     {label: 'Movimentos', path: '/login'},
+  ]
+     const teste2 = [
+     {label: 'teste', path: '/login'},
+  ]
+
+
   return (
     <>
       <AppBar position="static">
@@ -64,6 +76,20 @@ export default function Layout() {
               </MenuItem>
             ))}
           </Menu>
+
+          {sair.map(item => (
+            <Button
+              key={item.path}
+              color="inherit"
+              component={Link}
+              to={item.path}
+              variant={location.pathname === item.path ? 'outlined' : 'text'}
+              //ml: 'auto' empurra automaticamente o item para a direita
+              sx={{ color: '#fff', mx: 1, ml: 'auto' }}
+            >
+              {item.label}
+            </Button>
+          ))}
         </Toolbar>
       </AppBar>
 
