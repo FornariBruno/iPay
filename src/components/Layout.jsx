@@ -1,10 +1,15 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, Button, Box, Menu, MenuItem } from '@mui/material';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
   const [anchorEl, setAnchorEl] = useState(null);
+  const [inactiveTimer, setInactiveTimer] = useState(null);
 
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -13,6 +18,29 @@ export default function Layout() {
   const handleCloseMenu = () => {
     setAnchorEl(null);
   };
+
+  const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+    };
+
+  const resetTimer = useCallback(() => {
+    if (inactiveTimer) clearTimeout(inactiveTimer);
+    const timer = setTimeout(() => {
+      handleLogout();
+    }, 30 * 60 * 1000); //30 minutos
+  }, [inactiveTimer]);
+
+  useEffect(() => {
+    const events = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+    resetTimer();
+
+    return () => {
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+      if(inactiveTimer) clearTimeout(inactiveTimer);
+    };
+  }, [resetTimer]);
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard' },
@@ -76,20 +104,13 @@ export default function Layout() {
               </MenuItem>
             ))}
           </Menu>
-
-          {sair.map(item => (
-            <Button
-              key={item.path}
-              color="inherit"
-              component={Link}
-              to={item.path}
-              variant={location.pathname === item.path ? 'outlined' : 'text'}
-              //ml: 'auto' empurra automaticamente o item para a direita
-              sx={{ color: '#fff', mx: 1, ml: 'auto' }}
-            >
-              {item.label}
-            </Button>
-          ))}
+          <Button
+            color="inherit"
+            onClick={handleLogout}
+            sx={{ color: '#fff', mx: 1, ml: 'auto' }}
+          >
+            Sair
+          </Button>
         </Toolbar>
       </AppBar>
 

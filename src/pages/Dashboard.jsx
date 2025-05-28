@@ -156,41 +156,81 @@ export default function Dashboard() {
     setFilterEnd('');
   };
 
+  const handleBulkDelete = async () => {
+  if (!selectedTransactions.length) return;
+
+  const confirm = window.confirm(`Tem certeza que deseja excluir ${selectedTransactions.length} transações?`);
+  if (!confirm) return;
+
+  const batch = writeBatch(db);
+
+  selectedTransactions.forEach(id => {
+    const ref = doc(db, 'transactions', id);
+    batch.delete(ref);
+  });
+
+  await batch.commit();
+  setSelectedTransactions([]);
+  setAllSelected(false);
+
+  alert('Transações excluídas com sucesso!');
+};
+
+
   const handleCarregarDespesasFixas = async () => {
-    const despesasSnapshot = await getDocs(
-      query(collection(db, 'despesasFixas'), where('uid', '==', user.uid))
-    );
-    const batch = writeBatch(db);
-    let inseriuAlguma = false;
+  const despesasSnapshot = await getDocs(
+    query(collection(db, 'despesasFixas'), where('uid', '==', user.uid))
+  );
+  const batch = writeBatch(db);
+  let inseriuAlguma = false;
 
-    despesasSnapshot.forEach(docSnapshot => {
-      const despesa = docSnapshot.data();
-      if (despesa.mes && despesa.mes !== form.competenciaMes) return;
+  despesasSnapshot.forEach(docSnapshot => {
+    const despesa = docSnapshot.data();
 
-      const novaTransacao = {
-        uid: user.uid,
-        amount: despesa.valor ? parseFloat(despesa.valor) : 0,
-        type: despesa.tipo,
-        paymentDate: '',
-        dueDate: '',
-        detail: despesa.descricao,
-        status: 'Não Pago',
-        competenciaMes: form.competenciaMes,
-        competenciaAno: form.competenciaAno,
-        date: new Date()
-      };
-      const newDocRef = doc(collection(db, 'transactions'));
-      batch.set(newDocRef, novaTransacao);
-      inseriuAlguma = true;
-    });
+    // Verifica se há restrição de mês (opcional)
+    if (despesa.mes && despesa.mes !== form.competenciaMes) return;
 
-    if (inseriuAlguma) {
-      await batch.commit();
-      alert('Despesas fixas carregadas com sucesso!');
-    } else {
-      alert('Nenhuma despesa fixa para o mês selecionado.');
-    }
-  };
+    // Pegando o dia cadastrado da despesa fixa
+    const diaVencimento = despesa.dia || 1;  // Ajuste conforme o campo real da sua base, default dia 1
+
+    // Convertendo o nome do mês para número
+    const meses = {
+      Janeiro: 0, Fevereiro: 1, Março: 2, Abril: 3, Maio: 4, Junho: 5,
+      Julho: 6, Agosto: 7, Setembro: 8, Outubro: 9, Novembro: 10, Dezembro: 11
+    };
+
+    const mesNumero = meses[form.competenciaMes];
+    const ano = form.competenciaAno;
+
+    // Montando a data de vencimento
+    const dataVencimento = new Date(ano, mesNumero, diaVencimento);
+
+    const novaTransacao = {
+      uid: user.uid,
+      amount: despesa.valor ? parseFloat(despesa.valor) : 0,
+      type: despesa.tipo,
+      paymentDate: '',  // Pode ser preenchido se desejar
+      dueDate: dataVencimento.toISOString().substring(0, 10),  // 'YYYY-MM-DD'
+      detail: despesa.descricao,
+      status: 'Não Pago',
+      competenciaMes: form.competenciaMes,
+      competenciaAno: form.competenciaAno,
+      date: new Date()
+    };
+
+    const newDocRef = doc(collection(db, 'transactions'));
+    batch.set(newDocRef, novaTransacao);
+    inseriuAlguma = true;
+  });
+
+  if (inseriuAlguma) {
+    await batch.commit();
+    alert('Despesas fixas carregadas com sucesso!');
+  } else {
+    alert('Nenhuma despesa fixa para o mês selecionado.');
+  }
+};
+
 
   return (
     <Box sx={{ minHeight: '100vh', width: '97vw', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#1e1e1e' }}>
@@ -225,19 +265,10 @@ export default function Dashboard() {
             <Button variant="contained" color="primary" onClick={handleBulkUpdate} disabled={!selectedTransactions.length}>
               Marcar Selecionados como Pago
             </Button>
+            <Button variant="contained" color="error" onClick={handleBulkDelete} disabled={!selectedTransactions.length}>
+              Excluir Selecionados
+            </Button>
           </Box>
-
-          <Box display="flex" gap={2} mb={2} alignItems="flex-end">
-            <TextField select label="Filtrar por" value={filterBy} onChange={e => setFilterBy(e.target.value)}>
-              <MenuItem value="date">Data de Inclusão</MenuItem>
-              <MenuItem value="dueDate">Data de Vencimento</MenuItem>
-              <MenuItem value="paymentDate">Data de Pagamento</MenuItem>
-            </TextField>
-            <TextField label="De" type="date" value={filterStart} onChange={e => setFilterStart(e.target.value)} InputLabelProps={{ shrink: true }} />
-            <TextField label="Até" type="date" value={filterEnd} onChange={e => setFilterEnd(e.target.value)} InputLabelProps={{ shrink: true }} />
-            <Button variant="outlined" color="secondary" onClick={handleClearFilters}>Limpar Filtros</Button>
-          </Box>
-
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
