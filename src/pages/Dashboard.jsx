@@ -30,7 +30,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Select
+  Select,
+  Checkbox
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -38,9 +39,11 @@ import EditIcon from '@mui/icons-material/Edit';
 export default function Dashboard() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState([]);
+  const [selectedTransactions, setSelectedTransactions] = useState([]);
+  const [allSelected, setAllSelected] = useState(false);
   const [form, setForm] = useState({
     competenciaMes: '',
-    competenciaAno: '',
+    competenciaAno: new Date().getFullYear(),
     amount: '',
     type: 'Receita',
     paymentDate: '',
@@ -101,7 +104,36 @@ export default function Dashboard() {
       detail: item.detail || '',
       status: item.status || 'Não Pago'
     });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const handleSelect = (id) => {
+    setSelectedTransactions(prev =>
+      prev.includes(id) ? prev.filter(txId => txId !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkUpdate = async () => {
+    const batch = writeBatch(db);
+    selectedTransactions.forEach(id => {
+      const ref = doc(db, 'transactions', id);
+      batch.update(ref, { status: 'Pago' });
+    });
+    await batch.commit();
+    setSelectedTransactions([]);
+    alert('Status atualizado para "Pago"!');
+  };
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedTransactions([]);
+    } else {
+      setSelectedTransactions(transactions.map(tx => tx.id));
+    }
+    setAllSelected(!allSelected);
+  };
+
 
   const filteredTransactions = transactions.filter(tx => {
     if (!filterStart || !filterEnd) return true;
@@ -190,6 +222,9 @@ export default function Dashboard() {
             </TextField>
             <Button variant="contained" onClick={handleAdd}>{editingId ? 'Salvar Alterações' : 'Adicionar'}</Button>
             <Button variant="outlined" onClick={handleCarregarDespesasFixas}>Carregar Despesas Fixas</Button>
+            <Button variant="contained" color="primary" onClick={handleBulkUpdate} disabled={!selectedTransactions.length}>
+              Marcar Selecionados como Pago
+            </Button>
           </Box>
 
           <Box display="flex" gap={2} mb={2} alignItems="flex-end">
@@ -206,7 +241,14 @@ export default function Dashboard() {
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
-                <TableRow>
+                <TableRow >
+                  <TableCell>
+                    <Checkbox
+                      checked={allSelected}
+                      onChange={handleSelectAll}
+                    />
+                    Selecionar Todos
+                  </TableCell>
                   <TableCell>Data de Inclusão</TableCell>
                   <TableCell>Tipo</TableCell>
                   <TableCell>Data Vencimento</TableCell>
@@ -220,6 +262,12 @@ export default function Dashboard() {
               <TableBody>
                 {filteredTransactions.map(tx => (
                   <TableRow key={tx.id}>
+                    <TableCell>
+                    <Checkbox
+                      checked={selectedTransactions.includes(tx.id)}
+                      onChange={() => handleSelect(tx.id)}
+                    />
+                    </TableCell>
                     <TableCell>{tx.date?.seconds ? new Date(tx.date.seconds * 1000).toLocaleDateString() : '-'}</TableCell>
                     <TableCell>{tx.type}</TableCell>
                     <TableCell>{tx.dueDate || '-'}</TableCell>
