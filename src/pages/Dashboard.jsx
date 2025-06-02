@@ -32,6 +32,8 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]); // Transações do Firestore
   const [selectedTransactions, setSelectedTransactions] = useState([]); // Transações selecionadas
   const [allSelected, setAllSelected] = useState(false); // Marcar todos
+  const [lastCompetenciaMes, setLastCompetenciaMes] = useState(''); //Armazena último competenciaMes selecionado
+
   const [form, setForm] = useState({
     competenciaMes: '',
     competenciaAno: new Date().getFullYear(),
@@ -85,9 +87,12 @@ export default function Dashboard() {
       });
     }
 
+    //Guarda o último mês competencia informado.
+    setLastCompetenciaMes(form.competenciaMes);
+
     // Resetar formulário
     setForm({
-      competenciaMes: '',
+      competenciaMes: form.competenciaMes,
       competenciaAno: new Date().getFullYear(),
       amount: '',
       type: 'Despesa',
