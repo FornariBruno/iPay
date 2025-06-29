@@ -184,7 +184,7 @@ export default function Dashboard() {
   // Calcula o total das transações filtradas
   const total = filteredTransactions.reduce((acc, tx) => {
     const amount = parseFloat(tx.amount) || 0;
-    return tx.type === 'Despesa' ? acc + amount : acc - amount;
+    return tx.type === 'Receita' ? acc + amount : acc - amount;
   }, 0);
 
   // Exclui todas as transações selecionadas
