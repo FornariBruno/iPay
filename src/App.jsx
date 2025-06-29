@@ -12,6 +12,7 @@ import Layout from "./components/Layout";
 import ProtectedRoute from "./routes/ProtectRoute";
 import { AuthProvider } from "./context/AuthContext";
 import DespesasFixas from "./pages/Cadastros/DespesasFixas";
+import TipoDespesa from "./pages/Cadastros/TipoDespesa";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="relatorios" element={<Relatorios />} />
               <Route path="cadastros/despesasfixas" element={<DespesasFixas />} />
+              <Route path="cadastros/tipodespesa" element={<TipoDespesa />} />
             </Route>
 
             {/* Redirecionamento padrão */}

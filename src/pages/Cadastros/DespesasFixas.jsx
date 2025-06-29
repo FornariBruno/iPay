@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { db } from '../../firebase/config';
 import {
   collection,
@@ -36,16 +36,21 @@ import EditIcon from '@mui/icons-material/Edit';
 export default function DespesasFixas() {
   const { user } = useAuth();
   const [despesas, setDespesas] = useState([]);
+  const formRef = useRef(null);
+
 
   const [form, setForm] = useState({
     descricao: '',
     tipo: 'Gasto',
+    tipoDespesa: '',
     dia: '',
     mes: '',
     valor: ''
   });
 
   const [editingId, setEditingId] = useState(null);
+  const [tiposDespesa, setTiposDespesa] = useState([]);
+
 
   useEffect(() => {
     if (!user) return;
@@ -63,6 +68,23 @@ export default function DespesasFixas() {
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+
+  useEffect(() => {
+    const fetchTiposDespesa = async () => {
+      const q = query(collection(db, 'tiposDespesa'), where('uid', 'in', [user.uid, 'padrao']));
+      const unsubscribe = onSnapshot(q, snapshot => {
+        const tipos = snapshot.docs.map(doc => ({
+          id: doc.id,
+          nome: doc.data().nome
+        }));
+        setTiposDespesa(tipos);
+      });
+      return unsubscribe;
+    };
+  
+    fetchTiposDespesa();
+  }, [user.uid]);
+  
 
   const handleAdd = async () => {
     if (!form.descricao.trim() || !form.dia) return;
@@ -85,6 +107,7 @@ export default function DespesasFixas() {
     setForm({
       descricao: '',
       tipo: 'Gasto',
+      tipoDespesa: '',
       dia: '',
       mes: '',
       valor: ''
@@ -99,11 +122,13 @@ export default function DespesasFixas() {
     setForm({
       descricao: item.descricao || '',
       tipo: item.tipo || 'Gasto',
+      tipoDespesa: item.tipoDespesa || '',
       dia: item.dia || '',
       mes: item.mes || '',
       valor: item.valor || ''
     });
     setEditingId(item.id);
+    formRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -119,7 +144,7 @@ export default function DespesasFixas() {
         <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
           <Typography variant="h4" gutterBottom>Despesas Fixas</Typography>
 
-          <Box display="flex" flexWrap="wrap" gap={2} mb={3}>
+          <Box ref={formRef} display="flex" flexWrap="wrap" gap={2} mb={3}>
             <TextField name="descricao" label="Descrição" value={form.descricao} onChange={handleChange} />
             <FormControl sx={{ minWidth: 120 }}>
               <InputLabel>Tipo</InputLabel>
@@ -128,6 +153,23 @@ export default function DespesasFixas() {
                 <MenuItem value="Receita">Receita</MenuItem>
               </Select>
             </FormControl>
+            <FormControl sx={{ minWidth: 150 }}>
+                <InputLabel>Tipo de Despesa</InputLabel>
+                <Select
+                  name="tipoDespesa"
+                  value={form.tipoDespesa}
+                  onChange={handleChange}
+                  label="Tipo de Despesa"
+                >
+                  {tiposDespesa.length === 0 ? (
+                    <MenuItem disabled>Carregando...</MenuItem>
+                  ) : (
+                    tiposDespesa.map(tipo => (
+                      <MenuItem key={tipo.id} value={tipo.nome}>{tipo.nome}</MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
             <TextField name="dia" label="Dia" type="number" value={form.dia} onChange={handleChange} />
             <FormControl sx={{ minWidth: 120 }}>
               <InputLabel>Mês</InputLabel>
@@ -150,6 +192,7 @@ export default function DespesasFixas() {
                 <TableRow>
                   <TableCell>Descrição</TableCell>
                   <TableCell>Tipo</TableCell>
+                  <TableCell>Tipo de Despesa</TableCell>
                   <TableCell>Dia</TableCell>
                   <TableCell>Mês</TableCell>
                   <TableCell>Valor</TableCell>
@@ -161,6 +204,7 @@ export default function DespesasFixas() {
                   <TableRow key={d.id}>
                     <TableCell>{d.descricao}</TableCell>
                     <TableCell>{d.tipo}</TableCell>
+                    <TableCell>{d.tipoDespesa}</TableCell>
                     <TableCell>{d.dia}</TableCell>
                     <TableCell>{d.mes || 'Mensal'}</TableCell>
                     <TableCell>R$ {(parseFloat(d.valor) || 0).toFixed(2)}</TableCell>

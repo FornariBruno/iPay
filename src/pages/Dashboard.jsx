@@ -25,8 +25,12 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 
+
 export default function Dashboard() {
   const { user } = useAuth(); // Usuário autenticado
+
+  const [tiposDespesa, setTiposDespesa] = useState([]);
+
 
   // Estados do componente
   const [transactions, setTransactions] = useState([]); // Transações do Firestore
@@ -60,6 +64,23 @@ export default function Dashboard() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  useEffect(() => {
+    const fetchTiposDespesa = async () => {
+      const q = query(collection(db, 'tiposDespesa'), where('uid', 'in', [user.uid, 'padrao']));
+      const unsubscribe = onSnapshot(q, snapshot => {
+        const tipos = snapshot.docs.map(doc => ({
+          id: doc.id,
+          nome: doc.data().nome
+        }));
+        setTiposDespesa(tipos);
+      });
+      return unsubscribe;
+    };
+  
+    fetchTiposDespesa();
+  }, [user.uid]);
+  
+
   // Adiciona ou atualiza uma transação
   const handleAdd = async () => {
     if (!form.amount.trim()) return;
@@ -78,6 +99,7 @@ export default function Dashboard() {
         paymentDate: form.paymentDate,
         dueDate: form.dueDate,
         detail: form.detail,
+        tipoDespesa: form.tipoDespesa || '',
         status: form.status,
         competenciaMes: form.competenciaMes,
         competenciaAno: form.competenciaAno,
@@ -114,6 +136,7 @@ export default function Dashboard() {
       paymentDate: item.paymentDate || '',
       dueDate: item.dueDate || '',
       detail: item.detail || '',
+      tipoDespesa: item.tipoDespesa || '',
       status: item.status || 'Não Pago'
     });
     window.scrollTo({ top: 0, behavior: 'smooth' }); // Rolagem para o topo
@@ -210,11 +233,13 @@ export default function Dashboard() {
         paymentDate: '',
         dueDate: dataVencimento.toISOString().substring(0, 10),
         detail: despesa.descricao,
+        tipoDespesa: despesa.tipoDespesa || '', // ✅ Adiciona o tipo de despesa
         status: 'Não Pago',
         competenciaMes: form.competenciaMes,
         competenciaAno: form.competenciaAno,
         date: new Date()
       };
+      
 
       const newDocRef = doc(collection(db, 'transactions'));
       batch.set(newDocRef, novaTransacao);
@@ -251,6 +276,23 @@ export default function Dashboard() {
               <MenuItem value="Despesa">Despesa</MenuItem>
               <MenuItem value="Receita">Receita</MenuItem>
             </TextField>
+            <FormControl sx={{ minWidth: 150 }}>
+                  <InputLabel>Tipo de Despesa</InputLabel>
+                  <Select
+                    name="type"
+                    value={form.type}
+                    onChange={handleChange}
+                    label="Tipo de Despesa"
+                  >
+                    {tiposDespesa.length === 0 ? (
+                      <MenuItem disabled>Carregando...</MenuItem>
+                    ) : (
+                      tiposDespesa.map(tipo => (
+                        <MenuItem key={tipo.id} value={tipo.nome}>{tipo.nome}</MenuItem>
+                      ))
+                    )}
+                  </Select>
+                </FormControl>
             <TextField name="dueDate" label="Data de Vencimento" type="date" value={form.dueDate} onChange={handleChange} InputLabelProps={{ shrink: true }} />
             <TextField name="paymentDate" label="Data de Pagamento" type="date" value={form.paymentDate} onChange={handleChange} InputLabelProps={{ shrink: true }} />
             <TextField name="detail" label="Detalhamento" value={form.detail} onChange={handleChange} />
@@ -275,6 +317,7 @@ export default function Dashboard() {
                   </TableCell>
                   <TableCell>Data de Inclusão</TableCell>
                   <TableCell>Tipo</TableCell>
+                  <TableCell>Tipo Despesa</TableCell>
                   <TableCell>Vencimento</TableCell>
                   <TableCell>Pagamento</TableCell>
                   <TableCell>Detalhamento</TableCell>
@@ -294,6 +337,7 @@ export default function Dashboard() {
                     </TableCell>
                     <TableCell>{tx.date?.seconds ? new Date(tx.date.seconds * 1000).toLocaleDateString() : '-'}</TableCell>
                     <TableCell>{tx.type}</TableCell>
+                    <TableCell>{tx.tipoDespesa}</TableCell>
                     <TableCell>{tx.dueDate || '-'}</TableCell>
                     <TableCell>{tx.paymentDate || '-'}</TableCell>
                     <TableCell>{tx.detail}</TableCell>

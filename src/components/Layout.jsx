@@ -49,21 +49,8 @@ export default function Layout() {
 
   const cadastroItems = [
     { label: 'Despesas Fixas', path: '/Cadastros/DespesasFixas' },
-    { label: 'Produtos', path: '/Cadastros/Produtos' },
-    { label: 'Usuários', path: '/Cadastros/Usuarios' },
+    { label: 'Tipo de Despesas', path: '/Cadastros/TipoDespesa' }
   ];
-
-  const sair = [
-     {label: 'Sair', path: '/login'},
-  ]
-
-    const teste = [
-     {label: 'Movimentos', path: '/login'},
-  ]
-     const teste2 = [
-     {label: 'teste', path: '/login'},
-  ]
-
 
   return (
     <>
