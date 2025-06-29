@@ -41,7 +41,7 @@ export default function DespesasFixas() {
 
   const [form, setForm] = useState({
     descricao: '',
-    tipo: 'Gasto',
+    tipo: 'Despesa',
     tipoDespesa: '',
     dia: '',
     mes: '',
@@ -106,7 +106,7 @@ export default function DespesasFixas() {
 
     setForm({
       descricao: '',
-      tipo: 'Gasto',
+      tipo: 'Despesa',
       tipoDespesa: '',
       dia: '',
       mes: '',
@@ -121,7 +121,7 @@ export default function DespesasFixas() {
   const handleEdit = (item) => {
     setForm({
       descricao: item.descricao || '',
-      tipo: item.tipo || 'Gasto',
+      tipo: item.tipo || 'Despesa',
       tipoDespesa: item.tipoDespesa || '',
       dia: item.dia || '',
       mes: item.mes || '',
@@ -149,7 +149,7 @@ export default function DespesasFixas() {
             <FormControl sx={{ minWidth: 120 }}>
               <InputLabel>Tipo</InputLabel>
               <Select name="tipo" value={form.tipo} onChange={handleChange} label="Tipo">
-                <MenuItem value="Gasto">Gasto</MenuItem>
+                <MenuItem value="Despesa">Despesa</MenuItem>
                 <MenuItem value="Receita">Receita</MenuItem>
               </Select>
             </FormControl>

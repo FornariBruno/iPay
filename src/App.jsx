@@ -13,6 +13,7 @@ import ProtectedRoute from "./routes/ProtectRoute";
 import { AuthProvider } from "./context/AuthContext";
 import DespesasFixas from "./pages/Cadastros/DespesasFixas";
 import TipoDespesa from "./pages/Cadastros/TipoDespesa";
+import Objetivos from "./pages/Cadastros/Objetivos";
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
               <Route path="relatorios" element={<Relatorios />} />
               <Route path="cadastros/despesasfixas" element={<DespesasFixas />} />
               <Route path="cadastros/tipodespesa" element={<TipoDespesa />} />
+              <Route path="cadastros/objetivos" element={<Objetivos />} />
             </Route>
 
             {/* Redirecionamento padrão */}

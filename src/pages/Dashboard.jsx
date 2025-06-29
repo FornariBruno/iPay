@@ -36,16 +36,19 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]); // Transações do Firestore
   const [selectedTransactions, setSelectedTransactions] = useState([]); // Transações selecionadas
   const [allSelected, setAllSelected] = useState(false); // Marcar todos
+
   const [form, setForm] = useState({
     competenciaMes: '',
     competenciaAno: new Date().getFullYear(),
     amount: '',
-    type: 'Receita',
+    type: 'Despesa',
+    tipoDespesa: '',               // ✅ Adicione aqui
     paymentDate: '',
     dueDate: '',
     detail: '',
     status: 'Pago'
-  }); // Dados do formulário
+  });
+  
 
   const [editingId, setEditingId] = useState(null); // ID em edição
 
@@ -107,9 +110,10 @@ export default function Dashboard() {
       });
     }
 
+
     // Resetar formulário
     setForm({
-      competenciaMes: '',
+      competenciaMes: form.competenciaMes,
       competenciaAno: new Date().getFullYear(),
       amount: '',
       type: 'Despesa',
@@ -180,7 +184,7 @@ export default function Dashboard() {
   // Calcula o total das transações filtradas
   const total = filteredTransactions.reduce((acc, tx) => {
     const amount = parseFloat(tx.amount) || 0;
-    return tx.type === 'Receita' ? acc + amount : acc - amount;
+    return tx.type === 'Despesa' ? acc + amount : acc - amount;
   }, 0);
 
   // Exclui todas as transações selecionadas
@@ -279,8 +283,8 @@ export default function Dashboard() {
             <FormControl sx={{ minWidth: 150 }}>
                   <InputLabel>Tipo de Despesa</InputLabel>
                   <Select
-                    name="type"
-                    value={form.type}
+                    name="tipoDespesa"              // ✅ Correto
+                    value={form.tipoDespesa}
                     onChange={handleChange}
                     label="Tipo de Despesa"
                   >
@@ -292,7 +296,7 @@ export default function Dashboard() {
                       ))
                     )}
                   </Select>
-                </FormControl>
+            </FormControl>
             <TextField name="dueDate" label="Data de Vencimento" type="date" value={form.dueDate} onChange={handleChange} InputLabelProps={{ shrink: true }} />
             <TextField name="paymentDate" label="Data de Pagamento" type="date" value={form.paymentDate} onChange={handleChange} InputLabelProps={{ shrink: true }} />
             <TextField name="detail" label="Detalhamento" value={form.detail} onChange={handleChange} />
@@ -315,12 +319,12 @@ export default function Dashboard() {
                     <Checkbox checked={allSelected} onChange={handleSelectAll} />
                     Selecionar Todos
                   </TableCell>
+                  <TableCell>Detalhamento</TableCell>
                   <TableCell>Data de Inclusão</TableCell>
                   <TableCell>Tipo</TableCell>
                   <TableCell>Tipo Despesa</TableCell>
                   <TableCell>Vencimento</TableCell>
                   <TableCell>Pagamento</TableCell>
-                  <TableCell>Detalhamento</TableCell>
                   <TableCell>Valor</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Ações</TableCell>
@@ -335,12 +339,12 @@ export default function Dashboard() {
                         onChange={() => handleSelect(tx.id)}
                       />
                     </TableCell>
+                    <TableCell>{tx.detail}</TableCell>
                     <TableCell>{tx.date?.seconds ? new Date(tx.date.seconds * 1000).toLocaleDateString() : '-'}</TableCell>
                     <TableCell>{tx.type}</TableCell>
                     <TableCell>{tx.tipoDespesa}</TableCell>
                     <TableCell>{tx.dueDate || '-'}</TableCell>
                     <TableCell>{tx.paymentDate || '-'}</TableCell>
-                    <TableCell>{tx.detail}</TableCell>
                     <TableCell>R$ {(parseFloat(tx.amount) || 0).toFixed(2)}</TableCell>
                     <TableCell>
                       <span style={{ color: tx.status === 'Pago' ? 'green' : 'red', fontWeight: 'bold' }}>{tx.status}</span>

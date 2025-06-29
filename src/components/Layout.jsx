@@ -1,16 +1,17 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, Button, Box, Menu, MenuItem } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useRef, useEffect, useState, useCallback } from 'react';
 
 export default function Layout() {
-  const location = useLocation();
-  const navigate = useNavigate();
   const { logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [anchorEl, setAnchorEl] = useState(null);
-  const [inactiveTimer, setInactiveTimer] = useState(null);
+  const timerRef = useRef(null);
 
+  // 🔧 corrigido: faltava declarar essas funções
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -19,17 +20,17 @@ export default function Layout() {
     setAnchorEl(null);
   };
 
-  const handleLogout = async () => {
-        await logout();
-        navigate('/login');
-    };
+  const handleLogout = useCallback(async () => {
+    await logout();
+    navigate('/login');
+  }, [logout, navigate]);
 
   const resetTimer = useCallback(() => {
-    if (inactiveTimer) clearTimeout(inactiveTimer);
-    const timer = setTimeout(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
       handleLogout();
-    }, 30 * 60 * 1000); //30 minutos
-  }, [inactiveTimer]);
+    }, 30 * 60 * 1000); // 30 minutos
+  }, [handleLogout]);
 
   useEffect(() => {
     const events = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
@@ -38,18 +39,19 @@ export default function Layout() {
 
     return () => {
       events.forEach(event => window.removeEventListener(event, resetTimer));
-      if(inactiveTimer) clearTimeout(inactiveTimer);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [resetTimer]);
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Relatórios', path: '/Relatorios' },
+    { label: 'Relatórios', path: '/relatorios' },
   ];
 
   const cadastroItems = [
-    { label: 'Despesas Fixas', path: '/Cadastros/DespesasFixas' },
-    { label: 'Tipo de Despesas', path: '/Cadastros/TipoDespesa' }
+    { label: 'Despesas Fixas', path: '/cadastros/despesasfixas' },
+    { label: 'Tipo de Despesas', path: '/cadastros/tipodespesa' },
+    { label: 'Objetivos', path: '/cadastros/objetivos' }
   ];
 
   return (
@@ -69,11 +71,10 @@ export default function Layout() {
             </Button>
           ))}
 
-          {/* Botão Cadastros com submenu */}
           <Button
             color="inherit"
             onClick={handleOpenMenu}
-            variant={location.pathname.startsWith('/Cadastros') ? 'outlined' : 'text'}
+            variant={location.pathname.startsWith('/cadastros') ? 'outlined' : 'text'}
             sx={{ color: '#fff', mx: 1 }}
           >
             Cadastros
@@ -91,6 +92,7 @@ export default function Layout() {
               </MenuItem>
             ))}
           </Menu>
+
           <Button
             color="inherit"
             onClick={handleLogout}
