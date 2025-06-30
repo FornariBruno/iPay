@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   Container, Typography, TextField, Button, Paper,
   Table, TableBody, TableCell, TableContainer, TableHead,
-  TableRow, IconButton, Box
+  TableRow, IconButton, Box, FormControlLabel, Checkbox
 } from '@mui/material';
 import { db } from '../../firebase/config';
 import { collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where } from 'firebase/firestore';
@@ -26,20 +26,27 @@ export default function Objetivos() {
   useEffect(() => {
     const q = query(collection(db, 'objetivos'), where('uid', '==', user.uid));
     const unsubscribe = onSnapshot(q, snapshot => {
-      setObjetivos(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setObjetivos(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR')));
     });
     return unsubscribe;
   }, [user.uid]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setForm({
+      ...form,
+      [name]: type === 'checkbox' ? checked : value
+    });
   };
+  
 
   const handleAdd = async () => {
     const novo = {
       ...form,
       valorEstimado: parseFloat(form.valorEstimado) || 0,
       valorAtual: parseFloat(form.valorAtual) || 0,
+      concluido: form.concluido || false,
       uid: user.uid
     };
 
@@ -54,7 +61,8 @@ export default function Objetivos() {
       titulo: '',
       valorEstimado: '',
       valorAtual: '',
-      dataExpectativa: ''
+      dataExpectativa: '',
+      concluido: false
     });
   };
 
@@ -63,6 +71,7 @@ export default function Objetivos() {
       titulo: item.titulo,
       valorEstimado: item.valorEstimado,
       valorAtual: item.valorAtual,
+      concluido: item.concluido || false,
       dataExpectativa: item.dataExpectativa
     });
     setEditingId(item.id);
@@ -84,6 +93,16 @@ export default function Objetivos() {
             <TextField name="valorEstimado" label="Valor Estimado" type="number" value={form.valorEstimado} onChange={handleChange} />
             <TextField name="valorAtual" label="Valor Atual Guardado" type="number" value={form.valorAtual} onChange={handleChange} />
             <TextField name="dataExpectativa" label="Data de Expectativa" type="date" value={form.dataExpectativa} onChange={handleChange} InputLabelProps={{ shrink: true }} />
+            <FormControlLabel
+                        control={
+                          <Checkbox
+                            name="concluido"
+                            checked={form.concluido}
+                            onChange={handleChange}
+                          />
+                        }
+                        label="Concluído"
+                      />
             <Button variant="contained" onClick={handleAdd}>{editingId ? 'Salvar' : 'Adicionar'}</Button>
           </Box>
 
@@ -96,6 +115,7 @@ export default function Objetivos() {
                   <TableCell>Valor Atual</TableCell>
                   <TableCell>Expectativa</TableCell>
                   <TableCell>Ações</TableCell>
+                  <TableCell>Concluído</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -109,6 +129,7 @@ export default function Objetivos() {
                       <IconButton onClick={() => handleEdit(obj)}><EditIcon /></IconButton>
                       <IconButton onClick={() => handleDelete(obj.id)}><DeleteIcon /></IconButton>
                     </TableCell>
+                    <TableCell>{obj.concluido ? 'Sim' : 'Não'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -7,7 +7,7 @@ import { db } from '../firebase/config';
 // Importações específicas do Firestore
 import {
   collection, addDoc, deleteDoc, doc, onSnapshot,
-  query, where, updateDoc, getDocs, writeBatch
+  query, where, updateDoc, getDocs, writeBatch, orderBy
 } from 'firebase/firestore';
 
 // Contexto de autenticação
@@ -54,7 +54,12 @@ export default function Dashboard() {
 
   // Carregar transações do Firestore
   useEffect(() => {
-    const q = query(collection(db, 'transactions'), where('uid', '==', user.uid));
+    const q = query(
+      collection(db, 'transactions'), 
+      where('uid', '==', user.uid),
+      orderBy('detail')
+    );
+
     const unsubscribe = onSnapshot(q, snapshot => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setTransactions(data);
